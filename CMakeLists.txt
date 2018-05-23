@@ -25,9 +25,9 @@ generate_messages(
 
 catkin_package(
    INCLUDE_DIRS include
-#  LIBRARIES leap_motion
+  #LIBRARIES leap_motion
    CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
-#  DEPENDS system_lib
+  #DEPENDS system_lib
 )
 
 include_directories(include
@@ -40,17 +40,22 @@ install(PROGRAMS
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-if($ENV{LEAP_SDK})
-  add_executable(leap_camera src/leap_camera.cpp)
+if( EXISTS $ENV{LEAP_SDK})
+  message("LEAP_SDK = $ENV{LEAP_SDK}/include")
+  add_executable(leap_camera nodes/leap_camera.cpp)
   target_link_libraries(leap_camera
     ${catkin_LIBRARIES} $ENV{LEAP_SDK}/lib/x64/libLeap.so
   )
 
-  add_executable(leap_hands src/leap_hands.cpp)
+  add_executable(leap_hands nodes/leap_hands.cpp)
   target_link_libraries(leap_hands
     ${catkin_LIBRARIES} $ENV{LEAP_SDK}/lib/x64/libLeap.so
   )
+else()
+message("NO  =  $ENV{LEAP_SDK}")
 endif()
+
+
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
