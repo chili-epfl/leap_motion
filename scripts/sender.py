@@ -7,6 +7,7 @@ import rospy
 import leap_interface
 from leap_motion.msg import leap
 from leap_motion.msg import leapros
+from visualization_msgs.msg import MarkerArray, Marker
 
 FREQUENCY_ROSTOPIC_DEFAULT = 0.01
 NODENAME = 'leap_pub'
@@ -23,10 +24,14 @@ def sender():
     li.setDaemon(True)
     li.start()
     # pub     = rospy.Publisher('leapmotion/raw',leap)
-    pub_ros   = rospy.Publisher('leapmotion/data',leapros)
+    pub_ros   = rospy.Publisher('leapmotion/data',leapros, queue_size=2)
+    pub_ros_viz   = rospy.Publisher('leapmotion/data_viz',MarkerArray, queue_size=2)
     rospy.init_node(NODENAME)
 
+
     while not rospy.is_shutdown():
+
+        #rospy.loginfo( "hello world %s"%rospy.get_time())
         hand_direction_   = li.get_hand_direction()
         hand_normal_      = li.get_hand_normal()
         hand_palm_pos_    = li.get_hand_palmpos()
@@ -51,13 +56,42 @@ def sender():
         fingerNames = ['thumb', 'index', 'middle', 'ring', 'pinky']
         fingerPointNames = ['metacarpal', 'proximal',
                             'intermediate', 'distal', 'tip']
+
+        markerArray = MarkerArray()
+        counter = 0
+
         for fingerName in fingerNames:
             for fingerPointName in fingerPointNames:
                 pos = li.get_finger_point(fingerName, fingerPointName)
+                #rospy.loginfo(pos)
+
+
+                # todo push back the point
                 for iDim, dimName in enumerate(['x', 'y', 'z']):
                     setattr(getattr(msg, '%s_%s' % (fingerName, fingerPointName)),
                             dimName, pos[iDim])
+                    marker = Marker()
 
+
+                    marker.header.frame_id = "/leap_optical_frame";
+                    marker.header.stamp = rospy.Time.now()
+                    marker.id = counter
+                    counter+=1
+                    marker.type = Marker.SPHERE
+                    marker.scale.x = marker.scale.y = marker.scale.z = 0.2
+                    marker.color.r = .0
+                    marker.color.g = 1.0
+                    marker.color.b = 1.0
+                    marker.color.a = 0.7
+                    marker.action = Marker.ADD
+                    marker.lifetime  = rospy.rostime.Duration(0.1)
+                    marker.pose.orientation.w = 1.0
+                    marker.pose.position.x = pos[0] /100
+                    marker.pose.position.y = pos[1] /100
+                    marker.pose.position.z = pos[2] /100
+                    markerArray.markers.append(marker)
+
+        pub_ros_viz.publish(markerArray)
         # We don't publish native data types, see ROS best practices
         # pub.publish(hand_direction=hand_direction_,hand_normal = hand_normal_, hand_palm_pos = hand_palm_pos_, hand_pitch = hand_pitch_, hand_roll = hand_roll_, hand_yaw = hand_yaw_)
         pub_ros.publish(msg)

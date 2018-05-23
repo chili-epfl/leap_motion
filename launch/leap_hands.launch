@@ -1,0 +1,7 @@
+<launch>
+
+      <node pkg="tf2_ros" type="static_transform_publisher" name="leap_frame_broadcaster" args="1000 0 0 0 0 3.1415 base_footprint leap_optical_frame" />
+  <group ns="leap_motion">
+    <node pkg="leap_motion" type="leap_hands" name="leap_hands" output="screen"/>
+  </group>
+</launch>
